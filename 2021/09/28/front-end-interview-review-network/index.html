@@ -1,0 +1,343 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#6200ee"><meta name="author" content="sticla"><meta name="copyright" content="sticla"><meta name="generator" content="Hexo 5.4.0"><meta name="theme" content="hexo-theme-yun"><title>备战前端面试--服务端与网络篇 | sticla studio</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/star-markdown-css@0.1.24/dist/yun/yun-markdown.min.css"><script src="//at.alicdn.com/t/font_1140697_ed8vp4atwoj.js" async></script><script src="https://cdn.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>document.addEventListener("DOMContentLoaded", () => {
+  [".post-card",".post-content img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+});
+</script><link id="light-prism-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@latest/themes/prism-tomorrow.css" media="(prefers-color-scheme: light)"><link id="dark-prism-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@latest/themes/prism.css" media="(prefers-color-scheme: dark)"><link rel="shortcut icon" type="image/svg+xml" href="/favicon.ico"><link rel="mask-icon" href="/favicon.ico" color="#6200ee"><link rel="alternate icon" href="/yun.ico"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="preload" href="/js/utils.js" as="script"><link rel="preload" href="/js/hexo-theme-yun.js" as="script"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><script id="yun-config">
+    const Yun = window.Yun || {};
+    window.CONFIG = {"hostname":"blog.sticla.top","root":"/","title":"sticla studio","version":"1.5.2","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}.","hits":"${hits} results found","hits_time":"${hits} results found in ${time} ms"},"anonymous_image":"https://cdn.jsdelivr.net/gh/YunYouJun/cdn/img/avatar/none.jpg","say":{"api":"https://v1.hitokoto.cn","hitokoto":true},"fireworks":{"colors":["102, 167, 221","62, 131, 225","33, 78, 194"]}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/utils.js"></script><script src="/js/hexo-theme-yun.js"></script><link rel="preconnect" href="https://www.google-analytics.com" crossorigin><script async src="https://www.googletagmanager.com/gtag/js?id=G-CCS65Z3P4C"></script><script>if (CONFIG.hostname === location.hostname) {
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-CCS65Z3P4C');
+}</script><meta name="description" content="备战前端面试–服务端与网络篇HTTP&#x2F;HTTPSHTTP HTTP 1.0 有什么缺陷？HTTP 1.1 做了哪些改进？ http 1.0 依赖 TCP 来提供从客户端到服务器端之间的连接，但无法复用连接，发送完成即断开，如果要请求额外资源，必须新建一个连接。建立连接的成本很高(TCP 三次握手)，并且新的 TCP 连接开始时发送速率较慢(慢启动)。 另外，存在队头阻塞(head-of-line">
+<meta property="og:type" content="article">
+<meta property="og:title" content="备战前端面试--服务端与网络篇">
+<meta property="og:url" content="https://blog.sticla.top/2021/09/28/front-end-interview-review-network/index.html">
+<meta property="og:site_name" content="sticla studio">
+<meta property="og:description" content="备战前端面试–服务端与网络篇HTTP&#x2F;HTTPSHTTP HTTP 1.0 有什么缺陷？HTTP 1.1 做了哪些改进？ http 1.0 依赖 TCP 来提供从客户端到服务器端之间的连接，但无法复用连接，发送完成即断开，如果要请求额外资源，必须新建一个连接。建立连接的成本很高(TCP 三次握手)，并且新的 TCP 连接开始时发送速率较慢(慢启动)。 另外，存在队头阻塞(head-of-line">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-09-28T18:06:21.000Z">
+<meta property="article:modified_time" content="2023-02-02T06:23:29.270Z">
+<meta property="article:author" content="sticla">
+<meta property="article:tag" content="interview">
+<meta property="article:tag" content="计算机网络">
+<meta name="twitter:card" content="summary"><script src="/js/ui/mode.js"></script></head><body><script defer src="https://cdn.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="Table of Contents"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-list-ordered"></use></svg></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="Overview"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-passport-line"></use></svg></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info mickey-mouse"><a class="site-author-avatar" href="/about/" title="sticla"><img width="96" loading="lazy" src="https://cdn.jsdelivr.net/gh/li-sticla/picBed@latest/EAXX2-BUwAA2FuM (2).jpg" alt="sticla"><span class="site-author-status" title="我爱摸鱼">😭</span></a><div class="site-author-name"><a href="/about/">sticla</a></div><span class="site-name">sticla studio</span><sub class="site-subtitle">Change the world！</sub><div class="site-desciption">只有弱者才睡觉！</div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="Home"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-home-4-line"></use></svg></span></a><div class="site-state-item"><a href="/archives/" title="Archives"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-archive-line"></use></svg></span><span class="site-state-item-count">19</span></a></div><div class="site-state-item"><a href="/categories/" title="Categories"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-2-line"></use></svg></span><span class="site-state-item-count">10</span></a></div><div class="site-state-item"><a href="/tags/" title="Tags"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="site-state-item-count">20</span></a></div><a class="site-state-item hty-icon-button" target="_blank" rel="noopener" href="https://yun.yunyoujun.cn" title="文档"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-settings-line"></use></svg></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/li-sticla" title="GitHub" target="_blank" style="color:#181717"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-github-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="mailto:yuanzichao@163.com" title="E-Mail" target="_blank" style="color:#8E71C1"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-mail-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://music.163.com/#/user/home?id=1619244804" title="网易云音乐" target="_blank" style="color:#C10D0C"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-netease-cloud-music-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://space.bilibili.com/5050630" title="哔哩哔哩动画" target="_blank" style="color:#FF8EB3"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-bilibili-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://twitter.com/sticla_yuuri" title="Twitter" target="_blank" style="color:#1da1f2"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-twitter-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://t.me/sticla" title="Telegram" target="_blank" style="color:#0088CC"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-telegram-line"></use></svg></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-genderless-line"></use></svg></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-contrast-2-line"></use></svg></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%A4%87%E6%88%98%E5%89%8D%E7%AB%AF%E9%9D%A2%E8%AF%95%E2%80%93%E6%9C%8D%E5%8A%A1%E7%AB%AF%E4%B8%8E%E7%BD%91%E7%BB%9C%E7%AF%87"><span class="toc-number">1.</span> <span class="toc-text">备战前端面试–服务端与网络篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#HTTP-HTTPS"><span class="toc-number">1.1.</span> <span class="toc-text">HTTP&#x2F;HTTPS</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#HTTP"><span class="toc-number">1.1.1.</span> <span class="toc-text">HTTP</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#HTTPS"><span class="toc-number">1.1.2.</span> <span class="toc-text">HTTPS</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#TCP-IP"><span class="toc-number">1.2.</span> <span class="toc-text">TCP&#x2F;IP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B6%E4%BB%96"><span class="toc-number">1.3.</span> <span class="toc-text">其他</span></a></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article"><link itemprop="mainEntityOfPage" href="https://blog.sticla.top/2021/09/28/front-end-interview-review-network/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="sticla"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="sticla studio"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">备战前端面试--服务端与网络篇</h1><div class="post-meta"><div class="post-time" style="display:inline-block"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-line"></use></svg></span> <time title="Created: 2021-09-28 18:06:21" itemprop="dateCreated datePublished" datetime="2021-09-28T18:06:21+00:00">2021-09-28</time><span class="post-meta-divider">-</span><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-2-line"></use></svg></span> <time title="Modified: 2023-02-02 06:23:29" itemprop="dateModified" datetime="2023-02-02T06:23:29+00:00">2023-02-02</time></div><span class="leancloud_visitors" id="/2021/09/28/front-end-interview-review-network/" data-flag-title="备战前端面试--服务端与网络篇"><span class="post-meta-divider">-</span><span class="post-meta-item-icon" title="Views"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-eye-line"></use></svg> <span class="leancloud-visitors-count"></span></span></span><div class="post-classify"><span class="post-category"> <span class="post-meta-item-icon" style="margin-right:3px;"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-line"></use></svg></span><span itemprop="about" itemscope itemtype="https://schema.org/Thing"><a class="category" href="/categories/%E5%AD%A6%E4%B9%A0-%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="--text-color:var(--hty-text-color)" itemprop="url" rel="index"><span itemprop="text">学习-计算机网络</span></a></span></span><span class="post-tag"><span class="post-meta-divider">-</span><a class="tag" href="/tags/interview/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">interview</span></a><a class="tag" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">计算机网络</span></a></span></div><div class="post-author"><div class="author-avatar"><img src="https://www.gravatar.com/avatar/429930d44169a040b9b3a3e187e2f63e?s=20&amp;d=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2FYunYouJun%2Fcdn%2Fimg%2Favatar%2Fnone.jpg"></div><span class="author-name">sticla</span></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body" style="--smc-primary:#6200ee;"><h1 id="备战前端面试–服务端与网络篇"><a href="#备战前端面试–服务端与网络篇" class="headerlink" title="备战前端面试–服务端与网络篇"></a>备战前端面试–服务端与网络篇</h1><h2 id="HTTP-HTTPS"><a href="#HTTP-HTTPS" class="headerlink" title="HTTP/HTTPS"></a>HTTP/HTTPS</h2><h3 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h3><ol>
+<li><p><strong>HTTP 1.0 有什么缺陷？HTTP 1.1 做了哪些改进？</strong></p>
+<p>http 1.0 依赖 TCP 来提供从客户端到服务器端之间的连接，但无法复用连接，发送完成即断开，如果要请求额外资源，必须新建一个连接。建立连接的成本很高(TCP 三次握手)，并且新的 TCP 连接开始时发送速率较慢(慢启动)。</p>
+<p>另外，存在队头阻塞(<code>head-of-line blocking</code>)，当同一个 TCP 长连接中，前面的请求没有得到响应，后面的请求就会被阻塞。也就是每一次请求都必须得到响应。每次请求之间互相影响，其中任一个受到阻塞会使所有请求陷入等待。</p>
+<hr>
+<p>http 1.1 使用长连接(keep-alive)的重用机制，在 http 1.1 中默认开启。同时新增了一些功能：</p>
+<p><strong>host 字段</strong>：指定一个虚拟主机(同一 IP 可能对应多个域名)，作为本次连接的访问目标。</p>
+<p><strong>断点续传</strong>：分块传输，将任务划分为几部分，每个部分都采用一个线程来上传/下载。遇到网络故障，可以从已经上传/下载的部分继续。比较重要的头部字段：Range(申明本次需要续传的片段) 和 Content-Range、If-Range(文件校验)。</p>
+<p><strong>身份认证</strong>：使用较多的是基于JWT(JSON Web Tokens) 的 Token 认证法。</p>
+<p><strong>cache 缓存</strong>：http 1.0 时期，强缓存检查的字段是 <code>Expires</code>，约定一个具体时间点。而 1.1 改用 <code>Cache-Control</code>，用一个过期时限来控制缓存。同时在强缓存失效后进入协商缓存，比较重要的头部字段：<code>Last-Modified</code> 和 <code>Etag</code>。</p>
+</li>
+<li><p><strong>HTTP 2.0 中新增了哪些功能？</strong></p>
+<p>**新的二进制格式(Binary Format)**：http 1.x 的解析是基于文本，由于文本的表现形式多样，格式解析存在缺陷，为了健壮性需要考虑很多种情况。http 2.0 采用二进制格式解析，实现方便且健壮。</p>
+<p><strong>多路复用(MultiPlexing)<strong>：即连接共享，引入了流的机制，为每一个请求分配一个 streamID，这样一个连接上可以有多个请求，每个连接内的请求可以随机地混杂在一起。</strong>彻底解决了 http 1.x 中存在的队头阻塞问题。</strong></p>
+<p><strong>header 压缩</strong>：http 1.x 带有大量头部信息，且每次都要重新发送，在头部上花费了过多流量。http 2.0 通过头部压缩避免了重复 header 的传输，又减小了需要传输的大小。具体而言，在客户端和服务端之间共同维护了一个静态字典和动态字典，使得每次传输的请求头可以由查表获得。且采用哈夫曼编码压缩，根据字符出现的频率建立二叉排序树，确保出现频率最多的字符足够短。</p>
+<p><strong>服务器推送</strong>：在 http 2.0 中，服务器不再是被动地接收请求，响应请求，同样地，服务器也可以主动向客户端发送消息。在 TCP 连接建立之后，服务器就可以在客户端请求 HTML 的同时，把 HTML 文件中引用的其他资源也一起返回给客户端，减少等待时间。</p>
+</li>
+<li><p><strong>说说多路复用是如何实现的？为什么HTTP 1.1不能实现？</strong></p>
+<p>简单来说，http 2.0 是支持二进制帧的协议，http 1.1 是基于文本分割解析的协议。</p>
+<p>http 1.1 服务端需要不断地读取字节，直到遇到分割符(换行<code>/n</code>)，在此期间不能停止解析，并且无法预知解析需要消耗的内存。因此，也就产生了队头阻塞问题。</p>
+<p>http 2.0 将原先的文本格式转变为二进制格式，headers 和 body 的报文被拆分成一个个二进制帧，比如 Headers 帧存放头部字段，Data 帧存放请求体数据。帧的字节中保存了不同的信息，服务器解析时只需要根据这些字节信息，就可以知道整个帧期望多少字节数来进行处理。为了能够发送不同的数据信息，http 2.0 定义了 10 种帧类型。http 2.0 中的流量控制和优先级管理就是基于其实现的。</p>
+<p>通信双方都可以给对方发送二进制帧，这种二进制帧双向传输的序列，就构成了流(stream)，每个二进制帧都存储着其对应的 streamID。不同的 stream 是乱序传输的基础，不过每个 stream 中的二进制帧一定是按顺序传输的。</p>
+</li>
+<li><p><strong>GET 和 POST 有什么区别？</strong></p>
+<p>语义角度上，GET 通常用于获取资源。POST 通常是上传资源。</p>
+<p>缓存角度上，GET 请求默认会将资源缓存到本地，GET 不会。</p>
+<p>编码角度上，GET 请求只能使用 URL 编码，接受 ASCII 字符，POST 无限制。</p>
+<p>参数角度上，GET 一般放在 URL 中，因此不安全，POST 放在请求体中，更适合敏感数据传输。</p>
+<p>幂等性角度上，GET 遵循相同操作相同结果，POST 不是。</p>
+<p>TCP 角度上，GET 请求会把请求报文一次性发出去，而 POST 请求会分为两个 TCP 数据包，先发送 Header 部分，如果服务器响应 100(continue)，则继续发送 Body 部分。</p>
+</li>
+<li><p><strong>如何理解 HTTP 状态码？</strong></p>
+<p>RFC 规定 HTTP 的状态码为<strong>三位数</strong>，被分为五类：</p>
+<ul>
+<li><p><strong>1xx</strong>：表示目前处于中间状态，需要等待后续处理。</p>
+<p><code>101</code>：Switching Protocols，在由 HTTP 升级至 WebSocket 时，服务端同意变更，就会发送。</p>
+</li>
+<li><p><strong>2xx</strong>：表示成功状态。</p>
+<p><code>200</code>：最常见的成功状态。表示响应体中有数据。</p>
+<p><code>204</code>：NO Content，与 <code>200</code> 含义相同，表示响应体无数据。</p>
+<p><code>206</code>：Partial Content，表示有部分数据。使用场景为断点续传，会带上响应头 <code>Content-Range</code>。</p>
+</li>
+<li><p><strong>3xx</strong>：重定向状态，表示资源定位发生变化，需要重新请求。</p>
+<p><code>301</code>： Moved Permanently，永久重定向。</p>
+<p><code>302</code>：Found，临时重定向。</p>
+<p><code>304</code>：Not Modified，表示命中协商缓存。</p>
+</li>
+<li><p><strong>4xx</strong>：请求报文有误。</p>
+<p><code>400</code>：Bad Request，请求有未知错误。</p>
+<p><code>403</code>：Forbidden，服务器禁止访问。</p>
+<p><code>404</code>：Not Found，服务器上未找到对应资源。</p>
+<p><code>405</code>：Method Not Allowed，请求方法不允许。</p>
+<p><code>406</code>：Not Acceptable，资源不满足客户端条件。</p>
+<p><code>408</code>：Request Timeout，服务器等待时间过长。</p>
+<p><code>409</code>：Conflict，多个请求冲突。</p>
+<p><code>413</code>：Request Entity Too Large，请求体数据过大。</p>
+<p><code>414</code>：Request-URI Too Long，请求行里的 URI 太大。</p>
+<p><code>429</code>：Too Many Request，客户端发送的请求过多。</p>
+<p><code>431</code>：Request Header Fields Too Large，请求头的字段内容太大。</p>
+</li>
+<li><p><strong>5xx</strong>：服务端发生错误。</p>
+<p><code>500</code>：Internal Server Error，服务器出现未知错误。</p>
+<p><code>501</code>：Not Implemented，表示客户端请求的功能还不支持。</p>
+<p><code>502</code>：Bad Gateway，服务器自身是正常的，但访问的时候出错了。</p>
+<p><code>503</code>：Service Unavailable，表示服务器当前很忙，暂时无法响应服务。</p>
+</li>
+</ul>
+</li>
+<li><p><strong>简要概括一下 HTTP 的特点？HTTP 有哪些缺点？</strong></p>
+<p>特点：</p>
+<ol>
+<li>灵活可扩展。语义上自由，只规定了基本格式，没有严格语法限制。传输形式多样，支持图片、视频、文本数据。</li>
+<li>可靠传输。基于 TCP/IP，因此也能确保发送方和接收方准确、精准地传输。</li>
+<li>请求-应答机制。一发一收，请求必须得到响应。</li>
+<li>无状态。每次 HTTP 请求都是独立的，无上下文，默认不保留状态信息。 </li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li>无状态。在需要长连接的情景中，需要保存大量的上下文信息，避免重复传输。不考虑网络开销，无状态反而成为缺陷。</li>
+<li>明文传输。HTTP 以文本格式的报文传输，容易被窃取篡改。</li>
+<li>队头阻塞问题。当共用一个 TCP 连接时，由于请求-应答机制，每次的请求都必须等待响应，同一时间只能处理一个请求，其他的请求都会处于阻塞状态，并发也是如此。</li>
+</ol>
+</li>
+<li><p><strong>HTTP 如何处理大文件的传输？</strong></p>
+<p>HTTP 采用范围请求的解决方案。其前提是服务端支持。在响应头中加上 <code>Accept-Ranges: bytes</code>，来告诉客户端支持范围请求。</p>
+<p><code>Range</code> 字段：对于客户端而言，是指定从哪一部分开始请求。其格式为 <code>bytes = x - y</code>。</p>
+<p>服务器收到请求后，首先检查范围是否合法。越界了，返回 <code>416</code>，否则读取相应片段，返回 <code>206</code>。同时，服务端在响应中添加 <code>Content-Range</code>字段。如果在服务端的资源发生了变动，会检查客户端发送的请求头字段 <code>If-Range</code>。字段值既可以用 <code>Last-Modified</code> 时间点用于验证，也可以使用 <code>Etag</code>标记作为验证。但两者不能同时使用。</p>
+</li>
+<li><p><strong>HTTP 2.0 中的二进制帧是如何设计的？</strong></p>
+<p>每个帧分为两部分，帧头和帧体。帧头的前三位字节表示帧体的长度。然后是帧类型，分为数据帧和控制帧，数据帧存放报文信息，控制帧用来管理流的传输。接下来是一个字节的帧标志，有 8 个标志位。常用的有 <strong>END_HEADERS</strong>表示头数据结束，<strong>END_STREAM</strong>表示单方向数据发送结束。后四个字节是 streamID，也就是流标识符，接收方根据其选出 ID 相同的帧，将其组装成请求、响应报文。新建流时，此 ID 会自增，不可重用，达到长度上限后会新开一个 TCP 连接。</p>
+</li>
+</ol>
+<h3 id="HTTPS"><a href="#HTTPS" class="headerlink" title="HTTPS"></a>HTTPS</h3><ol>
+<li><p><strong>HTTPS 为什么让数据传输更安全？</strong></p>
+<p>HTTPS 是加强版的 HTTP。其原理是在 HTTP 和 TCP 间建立了一个中间安全层，将数据包进行加密，传给 TCP，而 TCP 需要将其解密，才能传给 HTTP。</p>
+<p>HTTPS 实际上是 HTTP + SSL/TLS。负责加密的部分就是 SSL/TLS。</p>
+</li>
+<li><p><strong>说说 HTTPS 的加密过程？</strong></p>
+<p>首先需要理解对称加密和非对称加密的概念。对称加密是最简单的，即加密和解密使用同一个密钥。对于非对称加密，使用两个密钥分别进行加解密。服务器拥有公钥和私钥，私钥保存在服务器，而公钥是公开的，公钥加密的数据只能用私钥解密，私钥加密的数据同样也只能用公钥解密。</p>
+<p>HTTPS 实际上使用的是对称加密和非对称加密结合的技术。传统 RSA 流程：</p>
+<ol>
+<li>客户端向服务器发送 client_random 和加密方法列表。</li>
+<li>服务器接收到，返回 server_random、加密方法和公钥。</li>
+<li>客户端接收到，生成另一个随机数 pre_random，并用公钥加密，返回给服务器。</li>
+<li>服务器用私钥解密这个 pre_random。</li>
+</ol>
+<p>之后服务器和客户端混合已获得的 client_random、server_random 和 pre_random，使用加密方法生成同样的密钥。然后服务器和客户端使用这个密钥通信，也就是对称加密。</p>
+<p>这个过程中，中间人没有私钥，也就无法拿到 pre_random，因此无法生成最终的密钥，确保了数据传输的安全性。</p>
+</li>
+<li><p><strong>为什么 HTTPS 需要添加数字证书？</strong></p>
+<p>尽管通过两种加密方式的结合，能解决大部分情况下的安全问题，但黑客也可以通过 DNS 劫持，将目标地址替换成自己的服务器地址，伪造公钥和私钥，和客户端进行通信。而客户端是无法得知自己访问的是一个危险服务器的。</p>
+<p>于是 HTTPS 又添加了数字证书认证的步骤，目的是验证服务器的身份。</p>
+<p>为了获取这个数字证书，需要向 CA 证书颁发机构获取授权，然后服务器就可以在返回 server_random 的同时，携带上证书，发送给客户端。客户端接收后就开始验证，验证通过再执行之后的步骤。</p>
+</li>
+<li><p><strong>TLS 1.2 握手的过程是怎样的？</strong></p>
+<p>跟传统 RSA 相比，在 pre_random 生成的部分不同：</p>
+<ol>
+<li>客户端发送 client_random、TLS 版本、加密套件列表。</li>
+<li>服务器接收，返回 server_random、server_params、确认 TLS 版本，加密套件列表和数字证书。</li>
+<li>客户端接收到，先验证数字证书，通过公钥解密由哈希摘要算法计算出的证书摘要，确认证书有效后，生成 client_params 发送给服务器。</li>
+<li>然后就可以使用 ECDHE 算法根据 server_params 和 client_params 计算出 pre_random，通过一个伪随机函数混合 server_random、client_random、pre_random，就得到了最终的密钥 secret。</li>
+<li>客户端在生成 secret 后，向服务器发送一条收尾消息，告诉服务器以后都使用对称加密方式通信。服务器生成 secret 后同样也会向客户端发送收尾消息。</li>
+</ol>
+</li>
+<li><p><strong>TLS 1.3 做了哪些改进？</strong></p>
+<p>强化安全，废除了很多加密算法，其中就包括经典的 RSA。最后只保留五个加密套件：</p>
+<ul>
+<li>TLS_AES_128_GCM_SHA256</li>
+<li>TLS_AES_256_GCM_SHA384</li>
+<li>TLS_CHACHA20_POLY1305_SHA256</li>
+<li>TLS_AES_128_GCM_SHA256</li>
+<li>TLS_AES_128_GCM_8_SHA256</li>
+</ul>
+<p>可以看到，最后剩下的对称加密算法只有 <strong>AES</strong> 和 <strong>CHACHA20</strong>，分组模式也只剩下 <strong>GCM</strong> 和 <strong>POLY1305</strong>，哈希摘要算法只剩下了 <strong>SHA256</strong> 和 <strong>SHA384</strong>。</p>
+<p>在 TLS 1.3 中，ECDHE 彻底取代了 RSA。</p>
+<p>提升性能，改进了握手流程：</p>
+<ol>
+<li>客户端发送 client_params、client_random、TLS 版本、加密套件列表。</li>
+<li>服务器收到，返回 server_params、server_random、确认 TLS 版本，加密套件列表和数字证书。使用 ECDHE 计算 pre_random，然后混合 server_random、client_random、pre_random 得到 secret。</li>
+<li>客户端验证证书通过，立刻使用 ECDHE 计算 pre_random，然后混合 server_random、client_random、pre_random 得到 secret。</li>
+<li>客户端在生成 secret 后，向服务器发送一条收尾消息，告诉服务器以后都使用对称加密方式通信。服务器生成 secret 后同样也会向客户端发送收尾消息。</li>
+</ol>
+<p>和 TLS 1.2 相比，少了一个  RTT。这种 TLS 1.3 握手方式也被叫做<strong>1-RTT 握手</strong>。通过优化，可以达到 0-RTT。</p>
+</li>
+</ol>
+<h2 id="TCP-IP"><a href="#TCP-IP" class="headerlink" title="TCP/IP"></a>TCP/IP</h2><ol>
+<li><p><strong>能不能说一说 TCP 和 UDP 的区别？</strong></p>
+<p>TCP 有三大核心特性：</p>
+<ol>
+<li><p>面向连接</p>
+<p>在通信之前，客户端和服务端需要三次握手来建立连接。</p>
+</li>
+<li><p>可靠性</p>
+<p>超时重传机制。TCP 会记录每次传输的数据的具体状态，以保证数据包按序到达。如果丢包或者网络不佳，TCP 会调整自己的行为，控制发送速度或者重发。</p>
+</li>
+<li><p>面向字节流</p>
+<p>UDP 的传输是基于数据报的，继承了 IP 层的特性。而 TCP 为了维护状态，将 IP 包变为字节流。</p>
+</li>
+</ol>
+<p>相比之下，UDP 是一个面向无连接的传输层协议。</p>
+</li>
+<li><p><strong>说说 TCP 三次握手？</strong></p>
+<p>最开始双方都处于 CLOSED 状态。然后服务端监听某个端口，进入 LISTEN 状态。</p>
+<p>第一次握手：客户端向服务端发送一个 SYN(序列号 seq = x)，进入 SYN-SENT 状态。</p>
+<p>第二次握手：服务端接收到，消耗 SYN 序列号进行对端确认，返回 ACK(ack = x + 1，每发送一个 SYN，序列号就会加 1，如果有丢失的情况，则会重传) 和 SYN(seq = y)，进入 SYN-RCVD 状态。</p>
+<p>第三次握手：客户端接收到，消耗 SYN 序列号进行对端确认，返回 ACK (ack = y + 1)，进入 ESTABLISHED 状态。服务端接收到，也进入 ESTABLISHED 状态。</p>
+<p>双方已建立连接，可以开始传输数据。</p>
+<blockquote>
+<p>为什么不是两次？</p>
+<p>原因：无法确认客户端的接收能力、服务端的发送能力。避免无效连接，浪费资源。</p>
+<p>为什么不是四次？</p>
+<p>理论上四次以上都可以，三次就可以解决问题的情况下没必要。</p>
+</blockquote>
+</li>
+<li><p><strong>说说 TCP 四次挥手？</strong></p>
+<p>刚开始双方处于 ESTABLISHED 状态。</p>
+<p>第一次挥手：客户端即将断开，向服务端发送 FIN(seq = p)，进入 FIN-WAIT-1 状态。此时客户端处于半关闭状态，无法发送报文。</p>
+<p>第二次挥手：服务端接收到，向客户端返回 ACK 确认(ack = p + 1)，进入 CLOSED-WAIT 状态。客户端收到，进入 FIN-WAIT-2 状态。</p>
+<p>第三次挥手：服务端在发送完最后的数据之后，向客户端发送 FIN(seq = q)，进入 LAST-ACK 状态。</p>
+<p>第四次挥手：客户端收到服务端的 FIN，进入 TIME-WAIT 状态，返回 ACK(ack = q + 1)，并等待 2 MSL 时间后，进入 CLOSED 状态。服务端接收到 ACK，立即进入 CLOSED 状态。</p>
+<blockquote>
+<p>为什么最后客户端还要等待 2MSL 的时间？</p>
+<p>MSL 表示报文最大存活时间。1 个 MSL 时间确保 ACK 能到达服务端，因为这个 ACK 可能丢失，导致服务端又重发一次 FIN，这样就需要再用 1 个 MSL  时间等待服务端。再次收到服务端的 FIN 后，会重置等待时间。</p>
+<p>为什么是四次挥手而不是三次？</p>
+<p>因为服务端在收到客户端的 FIN 后，并不能直接发送 FIN，而是要等待最后的数据全部发送完毕。因此先返回一个 ACK，避免客户端误以为 FIN 没有到达，又重新发送。</p>
+</blockquote>
+</li>
+<li><p><strong>说说半连接队列和 SYN Flood 攻击的关系？</strong></p>
+<p>三次握手前，服务端的状态从<code>CLOSED</code>变为<code>LISTEN</code>，同时在内部创建了两个队列：<strong>半连接队列</strong>和<strong>全连接队列</strong>，即<strong>SYN队列</strong>和<strong>ACCEPT队列</strong>。</p>
+<p>当客户端发送<code>SYN</code>到服务端，服务端收到以后回复<code>ACK</code>和<code>SYN</code>，状态由<code>LISTEN</code>变为<code>SYN_RCVD</code>，此时这个连接就被推入了<strong>SYN队列</strong>，也就是<strong>半连接队列</strong>。</p>
+<p>当客户端返回<code>ACK</code>，服务端接收后，三次握手完成。这个时候连接等待被具体的应用取走，在被取走之前，它会被推入另外一个 TCP 维护的队列，也就是<strong>全连接队列</strong>。</p>
+<p>SYN Flood 属于典型的 DoS/DDoS 攻击。其原理就是利用客户端短时间内伪造大量不存在的 IP，一直向服务器发送SYN，目的是使服务器拒绝服务从而瘫痪。</p>
+<p>此时服务端要处理大量 SYN 并返回 ACK，有大量连接处于 SYN_RCVD 状态，导致半连接队列被占满，无法处理正常请求。</p>
+<p>由于客户端的 IP 地址实际不存在，收不到客户端返回的 ACK，服务端将会一直重复发送数据，直到耗尽资源。</p>
+<blockquote>
+<p>如何应对？</p>
+<ol>
+<li>增加 SYN 容量。 </li>
+<li>减少 SYN + ACK 重试次数，避免大量重发。</li>
+<li>利用 SYN Cookie 技术，在服务端接收到 SYN 后不立即分配一个专门的数据区，而是根据这个 SYN 计算出一个 Cookie，连同第二次握手回复给客户端，在客户端回复 ACK 的时候带上这个 Cookie 值，服务端验证 Cookie 合法之后才分配连接资源。</li>
+</ol>
+</blockquote>
+</li>
+<li><p><strong>能不能说一说 TCP 的流量控制？</strong></p>
+<p>对于发送端和接收端，TCP 需要把发送的数据放到发送缓冲区，接收的数据放到接收缓冲区。</p>
+<p>流量控制是使用滑动窗口实现的。窗口大小指的是可以无需等待应答一次性发送的数据的最大长度。接收端将自己可以接受的缓冲区大小放入 TCP 报文头部中的窗口大小字段，通过 ACK 通知发送端。</p>
+<p>如果接收端的缓冲区已满，就会将窗口大小置 0，此时发送端将不再发送数据，但需要定期发送一个窗口探测数据段，以便接收端调整窗口大小后能通知到发送端。</p>
+</li>
+<li><p><strong>能不能说说 TCP 的拥塞控制？</strong></p>
+<p>拥塞控制主要是针对网络进行控制。对于拥塞控制来说，每个 TCP 连接都需要维护一个拥塞窗口和一个慢启动阈值。</p>
+<p><strong>拥塞窗口：</strong></p>
+<p>是指发送端目前还能继续传输的数据大小。当同时存在接收端给出的窗口限制和发送端自身的拥塞窗口限制时，发送窗口取其中的最小值。</p>
+<p><strong>慢启动：</strong></p>
+<p>拥塞控制采用一种保守的策略来适应网络环境，这种算法就是慢启动。运行过程：</p>
+<ol>
+<li>三次握手，双方宣示自己的接收窗口大小。，</li>
+<li>双方初始化自己的拥塞窗口大小。</li>
+<li>在开始传输后的一段时间，每当发送端收到一个 ACK，拥塞窗口大小加 1，因此，每经过一个 RTT，拥塞窗口大小翻倍，直到达到慢启动阈值。</li>
+</ol>
+<p><strong>拥塞避免：</strong></p>
+<p>当达到慢启动阈值后，采用拥塞避免算法来减缓窗口的增长速度。</p>
+<p><strong>快速重传：</strong></p>
+<p>在 TCP 传输的过程中，如果出现丢包，即接收端发现数据段不是按序到达，就会立刻重发之前的 ACK。当发送端收到三个重复的 ACK，就会意识到丢包了，于是马上进行重传。</p>
+<p><strong>选择性重传：</strong></p>
+<p>在接到发送端传来的报文后，接收端回复一个 ACK 报文，可以在其头部的可选项中加上 sack 这个字段，通过 leftedge 和 rightedge 来告诉发送端已经收到了哪些区间内的报文。发送端根据这一信息就可以选择性重传。</p>
+<p><strong>快速恢复：</strong></p>
+<p>发送端在收到三次重复 ACK 后，发现丢包，意识到现在的网络拥塞，但也不必回到慢启动。于是会进入快速恢复状态。此时，拥塞阈值降低为拥塞窗口的一半，拥塞窗口调整到拥塞阈值的大小，并且线性增加。</p>
+</li>
+<li><p><strong>说说 TCP/IP 四层模型？每层具体有哪些协议？</strong></p>
+<p><strong>链路层：</strong></p>
+<p>对应 OSI 七层模型的数据链路层和物理层。数据传输的单位主要是数据帧。负责监测数据在主机到网络之间的交换。</p>
+<p>地址解析协议(ARP)工作在此层。将 IP 地址翻译为 MAC 地址，同一局域网内的主机通过交换机来传输数据，而交换机只能识别 MAC 地址。</p>
+<p><strong>网络层：</strong></p>
+<p>对应 OSI 七层模型的网络层。数据传输的单位是数据包。解决主机与主机之间的通信。</p>
+<p>该层主要有三个协议：网际协议(IP)、互联网组管理协议(IGMP)、互联网控制报文协议(ICMP)。</p>
+<p><strong>传输层：</strong></p>
+<p>对应 OSI 七层模型的传输层。数据传输的单位是报文段。为应用层实体提供端到端的通信功能，保证了数据包的顺序传送及数据的完整性。该层定义了两个主要的协议：传输控制协议(TCP)、用户数据报协议(UDP)。</p>
+<p><strong>应用层：</strong></p>
+<p>对应 OSI 七层模型的会话层、表示层、应用层。为用户提供所需要的各种服务。</p>
+<p>基于 TCP 的协议：</p>
+<p>文件传输协议(FTP)、超文本传输协议(HTTP)、安全套接层(SSL)、安全文件传送协议(SFTP)、简单邮件传输协议(SMTP)。</p>
+<p>基于 UDP 的协议：</p>
+<p>简单文件传输协议(TFTP)、域名解析系统(DNS)、动态主机配置协议(DHCP)、简单网络管理协议(SNMP)。</p>
+</li>
+</ol>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><ol>
+<li><p><strong>简单解释下 Websocket 的概念？</strong></p>
+<p>Websocket 是一种数据传输协议，通过 TCP 建立的持久连接，使得客户端和服务端可以随时交换数据。</p>
+<p>常用的使用场景是聊天室、弹幕、协同编辑、股票基金报价。</p>
+<p>Websocket 的特点有：</p>
+<p>全双工：通信允许在两个方向上同时传输，相当于两个单工通信方式的结合。</p>
+<p>二进制帧：采用了二进制帧的结构，语法语义与 HTTP 2.0 不同，Websocket 倾向于实时通信，而 HTTP 2.0 侧重于传输效率。</p>
+<p>协议名：引入 ws、wss 分别代表明文和密文的 websocket 协议。默认端口为 80 或 443，与 HTTP 一致。</p>
+</li>
+<li><p><strong>DNS 协议是什么？说说完整的查询过程？</strong></p>
+<p>DNS，即域名解析系统，是互联网一项服务，是进行域名和与之相对应的 IP 地址进行转换的服务器。</p>
+<p>域名是一个具有层次的结构，从上到下一次为根域名、顶级域名、二级域名、三级域名…</p>
+<p>比如：<code>www.xxx.com</code>，<code>www</code> 为三级域名，<code>xxx</code>  为二级域名，<code>com</code>为顶级域名。系统为用户做了兼容，尾部的 <code>.</code> 根域名一般不需要输入。在域名的每一层都有一个域名服务器。</p>
+<hr>
+<p>DNS 查询方式有三种：</p>
+<p>递归查询：如果 A 请求 B，那么 B 一定要给出答案。比如主机向本地域名服务器发起请求，如果查询不到，本地域名服务器会向其他根域名服务器转发请求，直到找到为止或者返回错误。</p>
+<p>迭代查询：如果 B 没有 A 想要的内容，B 不自己发出请求，而是告诉 A 如何获得这个内容。比如本地域名服务器向根域名服务器发起请求，根域名服务器不知道请求所需的内容，就给请求方指定另一个域名服务器，让其自己去查询。</p>
+<p>非递归查询：B 上有 A 需要的内容，或者知道 A 需要的内容如何获得。分为两种情况，一种是本地域名服务器缓存了对应的 IP，直接返回。另一种是本地域名服务器中缓存了对应域名的权威服务器，那么再查询一次，将结果返回。</p>
+<hr>
+<p>在域名服务器解析的时候，使用缓存保存域名和<code>IP</code>地址的映射。分两种缓存方式：</p>
+<p>浏览器缓存：浏览器在获取网站域名的实际 IP 地址后会对其进行缓存，减少网络请求的损耗。</p>
+<p>操作系统缓存：用户自己配置的 <code>hosts</code> 文件。</p>
+<hr>
+<p>解析域名的过程如下：</p>
+<ol>
+<li>首先搜索浏览器的缓存。</li>
+<li>没有命中，继续搜索操作系统的 DNS 缓存。</li>
+<li>仍然未命中，操作系统将域名发送给本地域名服务器，本地域名服务器采用递归方式查询自己的 DNS 缓存。</li>
+<li>本地域名服务器的 DNS 缓存未命中，向上级域名服务器进行迭代查询。</li>
+<li>首先本地域名服务器请求根域名服务器，根域名服务器返回对应的顶级域名服务器的地址。</li>
+<li>本地域名向顶级域名服务器发起请求，获取权限域名服务器的地址。</li>
+<li>本地域名服务器根据权限域名服务器的地址向其发起请求，最终得到该域名对应的 IP 地址。</li>
+<li>本地域名服务器将得到的 IP 地址返回给操作系统，同时自己将 IP 地址缓存起来。</li>
+<li>操作系统将 IP 地址返回给浏览器，同时自己也将 IP 地址缓存。</li>
+<li>浏览器得到了域名对应的 IP 地址，并将 IP 地址缓存。</li>
+</ol>
+</li>
+<li><p><strong>如何理解CDN？说说实现原理？</strong></p>
+<p>CDN，即内容分发网络。构建在现有网络基础之上的智能虚拟网络，依靠部署在各地的边缘服务器，通过中心平台的负载均衡、内容分发、调度等功能模块，使用户就近获取所需内容，降低网络拥塞，提高用户访问响应速度和命中率。<code>CDN</code> 的关键技术主要有内容存储和分发技术。</p>
+<p>简单来讲，<code>CDN</code>就是根据用户位置分配最近的资源。于是，用户在上网的时候不用直接访问源站，而是访问离他最近的一个 CDN 节点，边缘节点，其实就是缓存了源站内容的代理服务器。</p>
+<p>应用<code>CDN</code>后，<code>DNS</code> 返回的不再是 <code>IP</code> 地址，而是一个<code>CNAME</code>(Canonical Name ) 别名记录，指向<code>CDN</code>的全局负载均衡。<code>CNAME</code>实际上在域名解析的过程中承担了中间人的角色，这是<code>CDN</code>实现的关键。</p>
+<p>由于没有返回<code>IP</code>地址，于是本地<code>DNS</code>会向负载均衡系统再发送请求 ，则进入到<code>CDN</code>的全局负载均衡系统进行智能调度：</p>
+<ul>
+<li>查找用户的 IP 地址，查表得知地理位置，查找相对最近的边缘节点。</li>
+<li>看用户的网络运营商，查找相同网络的边缘节点。</li>
+<li>检测边缘节点的负载状态，找负载较轻的节点。</li>
+<li>比较节点的健康状况、服务能力、带宽。</li>
+</ul>
+<p>综合得出最适合的边缘节点，返回给用户，用户就能就近访问 <code>CDN</code> 的缓存代理。</p>
+<p>缓存系统是 CDN 中另一个重要组成部分。缓存系统会尽量缓存常用的资源。</p>
+<p>通过 <code>CDN</code> 的负载均衡系统，智能调度边缘节点提供服务，相当于 <code>CDN</code> 服务的大脑，而缓存系统相当于<code>CDN</code>的心脏，缓存命中直接返回给用户，否则回源站查找。</p>
+</li>
+</ol>
+</div><ul class="post-copyright"><li class="post-copyright-author"><strong>Post author: </strong>sticla</li><li class="post-copyright-link"><strong>Post link: </strong><a href="https://blog.sticla.top/2021/09/28/front-end-interview-review-network/" title="备战前端面试--服务端与网络篇">https://blog.sticla.top/2021/09/28/front-end-interview-review-network/</a></li><li class="post-copyright-license"><strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><svg class="icon"><use xlink:href="#icon-creative-commons-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-by-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-nc-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-sa-line"></use></svg></a> unless otherwise stated.</li></ul></section></article><div class="post-nav"><div class="post-nav-item"><a class="post-nav-prev" href="/2021/09/29/multiple-requests/" rel="prev" title="JS 手写并发请求控制"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-left-s-line"></use></svg><span class="post-nav-text">JS 手写并发请求控制</span></a></div><div class="post-nav-item"><a class="post-nav-next" href="/2021/09/25/front-end-interview-review-algorithm/" rel="next" title="备战前端面试--数据结构与算法篇"><span class="post-nav-text">备战前端面试--数据结构与算法篇</span><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-right-s-line"></use></svg></a></div></div></div><div class="hty-card" id="comment"><div class="comment-tooltip text-center"><span>若您想及时得到回复提醒，建议跳转 GitHub Issues 评论。</span><br><a class="hty-button hty-button--raised" id="github-issues" target="_blank" rel="noopener" href="https://github.com/li-sticla/li-sticla.github.io/issues?q=is:issue+备战前端面试--服务端与网络篇">GitHub Issues</a></div><div id="valine-container"></div><script>Yun.utils.getScript("https://cdn.jsdelivr.net/npm/valine@latest/dist/Valine.min.js", () => {
+  const valineConfig = {"enable":true,"appId":"fhhkJbCVeplMMyPTL5CmiGOV-MdYXbMMI","appKey":"gXz6Ktd45hdMO77EYNY9cRds","placeholder":"有任何问题请留言，看到会回复滴","avatar":null,"pageSize":10,"visitor":true,"highlight":true,"recordIP":false,"enableQQ":true,"avatar_cdn":"https://gravatar.loli.net/avatar/","meta":["nick","mail","link"],"el":"#valine-container","lang":"en"}
+  valineConfig.path = "/2021/09/28/front-end-interview-review-network/"
+  new Valine(valineConfig)
+}, window.Valine);</script></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2019 – 2023 </span><span class="with-love" id="animate"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-cloud-line"></use></svg></span><span class="author"> sticla</span></div><div class="powered"><span>Powered by <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> v5.4.0</span><span class="footer-separator">|</span><span>Theme - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.5.2</span></div><div class="live_time"><span>本博客已萌萌哒地存活了</span><span id="display_live_time"></span><span class="moe-text">(●'◡'●)</span><script>function blog_live_time() {
+  setTimeout(blog_live_time, 1000);
+  const start = new Date('2021-03-19T21:17:49');
+  const now = new Date();
+  const timeDiff = (now.getTime() - start.getTime());
+  const msPerMinute = 60 * 1000;
+  const msPerHour = 60 * msPerMinute;
+  const msPerDay = 24 * msPerHour;
+  const passDay = Math.floor(timeDiff / msPerDay);
+  const passHour = Math.floor((timeDiff % msPerDay) / 60 / 60 / 1000);
+  const passMinute = Math.floor((timeDiff % msPerHour) / 60 / 1000);
+  const passSecond = Math.floor((timeDiff % msPerMinute) / 1000);
+  display_live_time.innerHTML = " " + passDay + " 天 " + passHour + " 小时 " + passMinute + " 分 " + passSecond + " 秒";
+}
+blog_live_time();
+</script></div></footer><a class="hty-icon-button" id="goUp" aria-label="back-to-top" href="#"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-up-s-line"></use></svg><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#6200ee" stroke-width="2" stroke-linecap="round"></circle></svg></a></div></body></html>

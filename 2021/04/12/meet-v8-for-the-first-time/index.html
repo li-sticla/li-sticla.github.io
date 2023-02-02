@@ -1,0 +1,189 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#6200ee"><meta name="author" content="sticla"><meta name="copyright" content="sticla"><meta name="generator" content="Hexo 5.4.0"><meta name="theme" content="hexo-theme-yun"><title>深入理解JS：初识V8引擎 | sticla studio</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/star-markdown-css@0.1.24/dist/yun/yun-markdown.min.css"><script src="//at.alicdn.com/t/font_1140697_ed8vp4atwoj.js" async></script><script src="https://cdn.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>document.addEventListener("DOMContentLoaded", () => {
+  [".post-card",".post-content img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+});
+</script><link id="light-prism-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@latest/themes/prism-tomorrow.css" media="(prefers-color-scheme: light)"><link id="dark-prism-css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@latest/themes/prism.css" media="(prefers-color-scheme: dark)"><link rel="shortcut icon" type="image/svg+xml" href="/favicon.ico"><link rel="mask-icon" href="/favicon.ico" color="#6200ee"><link rel="alternate icon" href="/yun.ico"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="preload" href="/js/utils.js" as="script"><link rel="preload" href="/js/hexo-theme-yun.js" as="script"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><script id="yun-config">
+    const Yun = window.Yun || {};
+    window.CONFIG = {"hostname":"blog.sticla.top","root":"/","title":"sticla studio","version":"1.5.2","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}.","hits":"${hits} results found","hits_time":"${hits} results found in ${time} ms"},"anonymous_image":"https://cdn.jsdelivr.net/gh/YunYouJun/cdn/img/avatar/none.jpg","say":{"api":"https://v1.hitokoto.cn","hitokoto":true},"fireworks":{"colors":["102, 167, 221","62, 131, 225","33, 78, 194"]}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/utils.js"></script><script src="/js/hexo-theme-yun.js"></script><link rel="preconnect" href="https://www.google-analytics.com" crossorigin><script async src="https://www.googletagmanager.com/gtag/js?id=G-CCS65Z3P4C"></script><script>if (CONFIG.hostname === location.hostname) {
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-CCS65Z3P4C');
+}</script><meta name="description" content="深入理解JS：初识V8引擎前言​    最近在学习各种前端框架之余，也在花更多时间对原生JS的知识做系统梳理。前端相对来说是一个比较新兴的领域，技术的更新换代非常频繁，光是想要赶上这些新兴技术的更新速度就已经非常难了，这对个人的学习能力是一个非常大的考验。如果只是不断学习新技术而不去思考背后的原理，在这个过程中很难产生自己的技术积淀。比起一味地追求新技术带来的新鲜感和功利地为了业务需求而提升熟练度">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解JS：初识V8引擎">
+<meta property="og:url" content="https://blog.sticla.top/2021/04/12/meet-v8-for-the-first-time/index.html">
+<meta property="og:site_name" content="sticla studio">
+<meta property="og:description" content="深入理解JS：初识V8引擎前言​    最近在学习各种前端框架之余，也在花更多时间对原生JS的知识做系统梳理。前端相对来说是一个比较新兴的领域，技术的更新换代非常频繁，光是想要赶上这些新兴技术的更新速度就已经非常难了，这对个人的学习能力是一个非常大的考验。如果只是不断学习新技术而不去思考背后的原理，在这个过程中很难产生自己的技术积淀。比起一味地追求新技术带来的新鲜感和功利地为了业务需求而提升熟练度">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173753615.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173806258.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173819924.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173833649.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173846514.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173856583.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173911781.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173924721.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173936917.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173949356.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173959311.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708174009434.png">
+<meta property="og:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708174021198.png">
+<meta property="article:published_time" content="2021-04-12T00:20:22.000Z">
+<meta property="article:modified_time" content="2023-02-02T06:23:29.270Z">
+<meta property="article:author" content="sticla">
+<meta property="article:tag" content="JavaScript">
+<meta property="article:tag" content="Google V8">
+<meta property="article:tag" content="NodeJS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173753615.png"><script src="/js/ui/mode.js"></script></head><body><script defer src="https://cdn.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="Table of Contents"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-list-ordered"></use></svg></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="Overview"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-passport-line"></use></svg></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info mickey-mouse"><a class="site-author-avatar" href="/about/" title="sticla"><img width="96" loading="lazy" src="https://cdn.jsdelivr.net/gh/li-sticla/picBed@latest/EAXX2-BUwAA2FuM (2).jpg" alt="sticla"><span class="site-author-status" title="我爱摸鱼">😭</span></a><div class="site-author-name"><a href="/about/">sticla</a></div><span class="site-name">sticla studio</span><sub class="site-subtitle">Change the world！</sub><div class="site-desciption">只有弱者才睡觉！</div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="Home"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-home-4-line"></use></svg></span></a><div class="site-state-item"><a href="/archives/" title="Archives"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-archive-line"></use></svg></span><span class="site-state-item-count">19</span></a></div><div class="site-state-item"><a href="/categories/" title="Categories"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-2-line"></use></svg></span><span class="site-state-item-count">10</span></a></div><div class="site-state-item"><a href="/tags/" title="Tags"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="site-state-item-count">20</span></a></div><a class="site-state-item hty-icon-button" target="_blank" rel="noopener" href="https://yun.yunyoujun.cn" title="文档"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-settings-line"></use></svg></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/li-sticla" title="GitHub" target="_blank" style="color:#181717"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-github-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="mailto:yuanzichao@163.com" title="E-Mail" target="_blank" style="color:#8E71C1"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-mail-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://music.163.com/#/user/home?id=1619244804" title="网易云音乐" target="_blank" style="color:#C10D0C"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-netease-cloud-music-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://space.bilibili.com/5050630" title="哔哩哔哩动画" target="_blank" style="color:#FF8EB3"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-bilibili-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://twitter.com/sticla_yuuri" title="Twitter" target="_blank" style="color:#1da1f2"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-twitter-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://t.me/sticla" title="Telegram" target="_blank" style="color:#0088CC"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-telegram-line"></use></svg></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-genderless-line"></use></svg></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-contrast-2-line"></use></svg></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3JS%EF%BC%9A%E5%88%9D%E8%AF%86V8%E5%BC%95%E6%93%8E"><span class="toc-number">1.</span> <span class="toc-text">深入理解JS：初识V8引擎</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JavaScript%E4%B8%8EJavaScript-%E5%BC%95%E6%93%8E"><span class="toc-number">1.2.</span> <span class="toc-text">JavaScript与JavaScript 引擎</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JavaScript%E5%BC%95%E6%93%8E%E4%B8%8E%E6%B5%8F%E8%A7%88%E5%99%A8"><span class="toc-number">1.3.</span> <span class="toc-text">JavaScript引擎与浏览器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#V8%EF%BC%9A%E5%BC%BA%E5%A4%A7%E7%9A%84JavaScript%E5%BC%95%E6%93%8E"><span class="toc-number">1.4.</span> <span class="toc-text">V8：强大的JavaScript引擎</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#V8%E5%BC%95%E6%93%8E%E7%9A%84%E5%86%85%E9%83%A8%E7%BB%93%E6%9E%84"><span class="toc-number">1.5.</span> <span class="toc-text">V8引擎的内部结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#V8-%E6%98%AF%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C%E4%B8%80%E6%AE%B5-JavaScript-%E4%BB%A3%E7%A0%81%E7%9A%84"><span class="toc-number">1.6.</span> <span class="toc-text">V8 是怎么执行一段 JavaScript 代码的</span></a></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article"><link itemprop="mainEntityOfPage" href="https://blog.sticla.top/2021/04/12/meet-v8-for-the-first-time/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="sticla"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="sticla studio"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">深入理解JS：初识V8引擎</h1><div class="post-meta"><div class="post-time" style="display:inline-block"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-line"></use></svg></span> <time title="Created: 2021-04-12 00:20:22" itemprop="dateCreated datePublished" datetime="2021-04-12T00:20:22+00:00">2021-04-12</time><span class="post-meta-divider">-</span><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-2-line"></use></svg></span> <time title="Modified: 2023-02-02 06:23:29" itemprop="dateModified" datetime="2023-02-02T06:23:29+00:00">2023-02-02</time></div><span class="leancloud_visitors" id="/2021/04/12/meet-v8-for-the-first-time/" data-flag-title="深入理解JS：初识V8引擎"><span class="post-meta-divider">-</span><span class="post-meta-item-icon" title="Views"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-eye-line"></use></svg> <span class="leancloud-visitors-count"></span></span></span><div class="post-classify"><span class="post-category"> <span class="post-meta-item-icon" style="margin-right:3px;"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-line"></use></svg></span><span itemprop="about" itemscope itemtype="https://schema.org/Thing"><a class="category" href="/categories/%E5%AD%A6%E4%B9%A0-JavaScript/" style="--text-color:var(--hty-text-color)" itemprop="url" rel="index"><span itemprop="text">学习-JavaScript</span></a></span></span><span class="post-tag"><span class="post-meta-divider">-</span><a class="tag" href="/tags/JavaScript/" style="--text-color:#F4DF4F"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">JavaScript</span></a><a class="tag" href="/tags/Google-V8/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">Google V8</span></a><a class="tag" href="/tags/NodeJS/" style="--text-color:#026E00"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="tag-name">NodeJS</span></a></span></div><div class="post-author"><div class="author-avatar"><img src="https://www.gravatar.com/avatar/429930d44169a040b9b3a3e187e2f63e?s=20&amp;d=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2FYunYouJun%2Fcdn%2Fimg%2Favatar%2Fnone.jpg"></div><span class="author-name">sticla</span></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body" style="--smc-primary:#6200ee;"><h1 id="深入理解JS：初识V8引擎"><a href="#深入理解JS：初识V8引擎" class="headerlink" title="深入理解JS：初识V8引擎"></a>深入理解JS：初识V8引擎</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>​    最近在学习各种前端框架之余，也在花更多时间对原生JS的知识做系统梳理。前端相对来说是一个比较新兴的领域，技术的更新换代非常频繁，光是想要赶上这些新兴技术的更新速度就已经非常难了，这对个人的学习能力是一个非常大的考验。如果只是不断学习新技术而不去思考背后的原理，在这个过程中很难产生自己的技术积淀。比起一味地追求新技术带来的新鲜感和功利地为了业务需求而提升熟练度，理解技术本质对于今后的学习来说是一个更加行之有效的方式。学习那些本质的知识，抓住上层应用中不变的底层机制，这样我们便能轻松理解上层的框架而不仅仅是被动地使用，甚至能够在适当的场景下自己造出轮子，以满足开发效率的需求。</p>
+<h2 id="JavaScript与JavaScript-引擎"><a href="#JavaScript与JavaScript-引擎" class="headerlink" title="JavaScript与JavaScript 引擎"></a>JavaScript与JavaScript 引擎</h2><p>​    我们写的 JavaScript 代码直接交给浏览器或者 Node 执行时，底层的 CPU 无法识别，也没法执行。<strong>CPU 只认识自己的指令集，指令集对应的是汇编代码</strong>。写汇编代码是一件很痛苦的事情。并且<strong>不同类型的 CPU 的指令集是不一样的，那就意味着需要给每一种 CPU 重写汇编代码</strong>。JavaScript引擎可以将JS代码编译为不同 CPU(Intel, ARM 以及 MIPS 等)对应的汇编代码，这样我们就不需要去翻阅每个 CPU 的指令集手册来编写汇编代码了。当然，<strong>JavaScript 引擎的工作也不只是编译代码，它还要负责执行代码、分配内存以及垃圾回收</strong>。</p>
+<h2 id="JavaScript引擎与浏览器"><a href="#JavaScript引擎与浏览器" class="headerlink" title="JavaScript引擎与浏览器"></a>JavaScript引擎与浏览器</h2><p>​    语言和环境是两个不同的概念。提及JavaScript,大多数人可能会想到浏览器，脱离浏览器JavaScript是不可能运行的，这与其他系统级的语言有着很大的不同。例如 C 语言可以开发系统和制造环境，而 JavaScript 只能寄生在某个具体的环境中才能够工作。<strong>JavaScript 运行环境一般都有宿主环境和执行期环境</strong>。如下图所示：</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173753615.png" alt="image-20210708173753615" loading="lazy"></p>
+<p>宿主环境是由外壳程序生成的，比如浏览器就是一个外壳环境（但是浏览器并不是唯一，很多服务器、桌面应用系统都能也能够提供 JavaScript 引擎运行的环境）宿主环境可以是浏览器中的渲染进程，可以是 Node.js 进程, 也可以是其他的定制开发的环境，而这些宿主则提供了很多 V8 执行 JavaScript 时所需的基础功能部件。执行期环境则由嵌入到外壳程序中的 JavaScript 引擎生成，在这个执行期环境，首先需要创建一个代码解析的初始环境，初始化的内容包含：</p>
+<ol>
+<li><p>一套与宿主环境相关联系的规则</p>
+</li>
+<li><p>JavaScript 引擎内核（基本语法规则、逻辑、命令和算法）</p>
+</li>
+<li><p>一组内置对象和 API</p>
+</li>
+<li><p>其他约定</p>
+</li>
+</ol>
+<p>不同的 JavaScript 引擎定义初始化环境是不同的，这就形成了所谓的浏览器兼容性问题，因为不同的浏览器使用不同 JavaScript 引擎。</p>
+<p>由于 JavaScript 大多数都是运行在浏览器上，不同浏览器的使用的引擎也各不相同，以下是目前主流浏览器引擎:</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173806258.png" alt="image-20210708173806258" loading="lazy"></p>
+<h2 id="V8：强大的JavaScript引擎"><a href="#V8：强大的JavaScript引擎" class="headerlink" title="V8：强大的JavaScript引擎"></a>V8：强大的JavaScript引擎</h2><p>​    在为数不多的JavaScript引擎中，V8无疑是最流行的，也正是由于 V8 的出现，目前的前端才能大放光彩，百花齐放。<a target="_blank" rel="noopener" href="https://v8.dev/">Google V8</a> 引擎是用 C ++编写的开源高性能 JavaScript 和 <a target="_blank" rel="noopener" href="https://www.jianshu.com/p/bff8aa23fe4d">WebAssembly</a> 引擎，可以运行在 Windows 7+，macOS 10.12+和使用 x64，IA-32，ARM 或 MIPS 处理器的 Linux 系统上。 <strong>V8 最早被开发用以嵌入到 Google 的开源浏览器 Chrome 中</strong>，第一个版本随着第一版[Chrome](<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/Google">https://baike.baidu.com/item/Google</a> Chrome/5638378?fr=aladdin)于 2008 年 9 月 2 日发布。<strong>但是 V8 是一个可以独立运行的模块，完全可以嵌入到任何 C ++应用程序中</strong>。著名的 Node.js( 一个异步的服务器框架，可以在服务端使用 JavaScript 写出高效的网络服务器 ) 就是基于 V8 引擎的，Couchbase, MongoDB 也使用了 V8 引擎。</p>
+<p>​    和<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/javascript%E5%BC%95%E6%93%8E/5356108?fr=aladdin">其他 JavaScript 引擎</a>一样，<strong>V8 会编译 / 执行 JavaScript 代码，管理内存，负责垃圾回收，与宿主语言的交互等。通过暴露宿主对象 ( 变量，函数等 ) 到 JavaScript，JavaScript 可以访问宿主环境中的对象，并在脚本中完成对宿主对象的操作</strong>。</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173819924.png" alt="image-20210708173819924" loading="lazy"></p>
+<h2 id="V8引擎的内部结构"><a href="#V8引擎的内部结构" class="headerlink" title="V8引擎的内部结构"></a>V8引擎的内部结构</h2><p><a target="_blank" rel="noopener" href="https://github.com/v8/v8">V8</a>是一个非常复杂的项目，使用<a target="_blank" rel="noopener" href="https://github.com/AlDanial/cloc">cloc</a>统计可知，它竟然有<strong>超过100万行C++代码</strong>。</p>
+<p>V8由许多子模块构成，其中这4个模块是最重要的：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://v8.dev/blog/scanner">Parser</a>（解析/语法分析）：负责将 JavaScript 源码转换为 Abstract Syntax Tree (AST)，当程序出现语法错误的时候，V8在语法分析阶段抛出异常。</li>
+</ul>
+<blockquote>
+<p>确切的说，在“Parser”将 JavaScript 源码转换为 AST前，还有一个叫”Scanner“的过程，具体流程如下：</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173833649.png" alt="image-20210708173833649" loading="lazy"></p>
+<p>这个过程通常也被称为：<strong>分词/词法分析</strong>。所谓的分词，就好比我们将一句话，按照词语的最小单位进行分割。计算机在编译一段代码前，也会将源代码拆解成有意义的不可再分的代码块，这些代码块被称为<strong>词法单元（token）</strong>。</p>
+<p>例如，考虑程序 <code>var a = 2</code>。这段程序通常会被分解成为下面这些词法单元：<code>var</code>，<code>a</code>，<code>=</code>，<code>2</code>；空格是否作为词法单位，取决于空格在这门语言中是否具有意义。</p>
+<p>词法分析和语法分析不是完全独立的，而是交错进行的，也就是说，词法分析器不会在读取所有的词法记号后再使用语法分析器来处理。在通常情况下，每取得一个词法记号，就将其送入语法分析器进行分析。</p>
+<p><strong>语法树(AST):</strong></p>
+<p><strong>一个由元素逐级嵌套所组成的代表了程序语法结构的树</strong>。<code>var a = 2;</code>的抽象语法树中可能会有一个叫做<code>VariableDeclaration</code>的顶级节点，接下来是一个叫作<code>Identifier</code>（它的值是<code>a</code>）的子节点，以及一个叫做<code>AssignmentExpression</code>的子节点。<code>AssignmentExpression</code>节点有一个叫做<code>NumericLiteral</code>（它的值是<code>2</code>）的子节点。</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173846514.png" alt="image-20210708173846514" loading="lazy"></p>
+<p>上面就是<code>var a = 2</code>生成抽象语法树的一个过程，可以借助<a target="_blank" rel="noopener" href="https://resources.jointjs.com/demos/javascript-ast">在线工具</a>查看</p>
+<p><strong>TIPS:</strong></p>
+<p>从词法分析到生成<code>AST</code>的这个过程称为编译。<code>Babel</code>就是一个<code>JavaScript</code>编译器，分了三个阶段：解析、转译、生成。将<code>ES6</code>源码解析成<code>AST</code>，再将<code>ES6</code>语法的<code>AST</code>转成<code>ES5</code>的<code>AST</code>，最后利用它来生成<code>ES5</code>源代码，这就是<code>Babel</code>的基本实现原理。<code>ESLint</code>原理也大致相同，检测流程也是将源码转换成<code>AST</code>，利用<code>AST</code>来检测代码规范。<code>Vue</code>的编译也用到了<code>AST</code>。</p>
+<p>参考资料：<a target="_blank" rel="noopener" href="https://www.yuque.com/allenstone/learn/fv5m3k"><strong>20 | 原理解析：JS 代码是如何被浏览器引擎编译、执行的？</strong></a></p>
+</blockquote>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://v8.dev/docs/ignition">Ignition</a>：interpreter，即解释器，负责将 AST 转换为 Bytecode(字节码)，解释执行 Bytecode；同时收集 TurboFan 优化编译所需的信息，比如函数参数的类型；解释器执行时主要有四个模块，内存中的字节码、寄存器、栈、堆。</li>
+</ul>
+<blockquote>
+<p><strong>通常有两种类型的解释器，基于栈 (Stack-based)和基于寄存器 (Register-based)<strong>，基于栈的解释器使用栈来保存函数参数、中间运算结果、变量等；基于寄存器的虚拟机则支持寄存器的指令操作，使用寄存器来保存参数、中间计算结果。通常，基于栈的虚拟机也定义了少量的寄存器，基于寄存器的虚拟机也有堆栈，其</strong>区别体现在它们提供的指令集体系</strong>。<strong>大多数解释器都是基于栈的</strong>，比如 Java 虚拟机，.Net 虚拟机，还有早期的 V8 虚拟机。基于堆栈的虚拟机在处理函数调用、解决递归问题和切换上下文时简单明快。而<strong>现在的 V8 虚拟机则采用了基于寄存器的设计</strong>，它将一些中间数据保存到寄存器中。<br><strong>基于寄存器的解释器架构</strong>：</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173856583.png" alt="image-20210708173856583" loading="lazy"></p>
+<p><strong>字节码(Bytecode):</strong></p>
+<p>字节码是机器代码的抽象。如果字节码采用和物理 CPU 相同的计算模型进行设计，则将字节码编译为机器代码更容易。这就是为什么解释器（interpreter）常常是寄存器或堆栈。 Ignition 是具有累加器的寄存器。可以将 V8 的字节码看作是小型的构建块（bytecodes as small building blocks），这些构建块组合在一起构成任何 JavaScript 功能。V8 有数以百计的字节码。比如 Add 或 TypeOf 这样的操作符，或者像 LdaNamedProperty 这样的属性加载符，还有很多类似的字节码。 V8 还有一些非常特殊的字节码，如 CreateObjectLiteral 或 SuspendGenerator。头文件 bytecodes.h（<a target="_blank" rel="noopener" href="https://github.com/v8/v8/blob/master/src/interpreter/bytecodes.h%EF%BC%89">github.com/v8/v8/blob/…</a> 定义了 V8 字节码的完整列表。</p>
+<p>资料参考：<a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/224908">解释器是如何解释执行字节码的？</a></p>
+</blockquote>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://v8.dev/docs/turbofan">TurboFan</a>：compiler，JIT 优化的编译器，TurboFan 的编译和Ignition的生成字节码不会在同一个线程上，这样就可以和 Ignition 解释器相互配合着使用，不受另一方的影响。它利用 Ignition 所收集的类型信息，将 Bytecode 转换为优化的汇编代码。</li>
+</ul>
+<blockquote>
+<p><strong>监视器(Monitor):</strong><br>监视器监视着所有通过解释器的代码的运行情况，如果一段代码运行了几次（run a few times），那么这段代码会被标记为“warm”代码，如果一段代码运行很多次（run a lot），那么这段代码会被标记为“hot”代码。</p>
+<p><strong>基线编译器(Baseline compiler)：</strong><br>如果一段代码被标记成了“warm”，JIT 会把这段代码送到基线编译器编译，同时把结果缓存起来。<br>如果一个函数被基线编译器编译，那么这个函数的每一行都会被编译成一个表，这个表的索引是行号和变量类型，如果监视器监视到了执行同样的代码和同样的变量类型，那么就直接把这个已编译的版本 push 出来给浏览器。</p>
+<p><strong>优化编译器(Optimizing compiler)：</strong><br>如果一段标记为“warm”的代码还在不断被调用，那么它会被标记为“hot”，被标记为“hot”的代码可能会经常被调用，所以可能需要花更多的时间优化它的编译结果。监视器会把该段代码送到优化编译器中，编译成一个高效的版本并存储下来。</p>
+<p>参考资料：<a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000008632441">WebAssembly 系列（二）JavaScript Just-in-time (JIT) 工作原理</a></p>
+</blockquote>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://v8.dev/blog/trash-talk">Orinoco</a>：garbage collector，垃圾回收模块，负责将程序不再需要的内存空间回收。</li>
+</ul>
+<blockquote>
+<p><strong>v8内存使用限制：</strong></p>
+<p>在Chrome中，v8被限制了内存的使用（64位约1.4G/1464MB ， 32位约0.7G/732MB）。表层原因是，V8最初为浏览器而设计，不太可能遇到用大量内存的场景。深层原因是，V8的垃圾回收机制的限制（如果清理大量的内存垃圾很耗时间，这样会引起JavaScript线程暂停执行，性能和应用直线下降）。对于栈的内存空间，只保存简单数据类型的内存，由操作系统自动分配和自动释放，而堆空间中的内存，需要由JS引擎手动释放。</p>
+<p><strong>垃圾回收算法:</strong></p>
+<p>绝大多数的对象存活周期都很短，大部分在经过一次的垃圾回收之后，内存就会被释放掉，而少部分的对象存活周期将会很长，一直是活跃的对象，不需要被回收。为了提高回收效率，V8 把堆内存分成了两部分进行处理——<strong>新生代内存</strong>和<strong>老生代内存</strong>。顾名思义，新生代就是临时分配的内存，存活时间短， 老生代是常驻内存，存活的时间长。V8 的堆内存，也就是两个内存之和。新生区通常只支持 1～8M 的容量，而老生区支持的容量就大很多了。对于这两块区域，V8 分别使用两个不同的垃圾回收器，以便更高效地实施垃圾回收。</p>
+<p><strong>新生代垃圾回收 (Scavenge)：</strong></p>
+<p>任何对象的声明分配到的内存，将会先被放置在新生代中，而因为大部分对象在内存中存活的周期很短，所以需要一个效率非常高的算法。在新生代中，主要使用Scavenge算法进行垃圾回收，Scavenge算法是一个典型的牺牲空间换取时间的复制算法，在占用空间不大的场景上非常适用。新生代中的变量如果经过多次回收后依然存在，那么就会被放入到<strong>老生代内存</strong>中，这种现象就叫<strong>晋升</strong>。</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173911781.png" alt="image-20210708173911781" loading="lazy"></p>
+<p><strong>老生代垃圾回收(Mark-Sweep &amp; Mark-Compact)：</strong></p>
+<p>在老生代空间中的对象都已经至少经历过一次或者多次的回收所以它们的存活概率会更大，如果这个时候再使用scavenge算法的话，会出现两个问题：</p>
+<ul>
+<li><p>scavenge为复制算法，重复复制活动对象会使得效率低下</p>
+</li>
+<li><p>scavenge是牺牲空间来换取时间效率的算法，而老生代支持的容量较大，会出现空间资源浪费问题</p>
+</li>
+</ul>
+<p>所以在老生代空间中采用了 Mark-Sweep（标记清除） 和 Mark-Compact（标记整理） 算法。</p>
+<p>Mark-Sweep处理时分为两阶段，标记阶段和清理阶段。看起来与Scavenge类似，不同的是，Scavenge算法是复制活动对象，而由于在老生代中活动对象占大多数，所以Mark-Sweep在标记了活动对象和非活动对象之后，直接把非活动对象清除。但是还遗留一个问题，被清除的对象遍布于各内存地址，产生很多内存碎片。</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173924721.png" alt="image-20210708173924721" loading="lazy"></p>
+<p>由于Mark-Sweep完成之后，老生代的内存中产生了很多内存碎片，若不清理这些内存碎片，如果出现需要分配一个大对象的时候，这时所有的碎片空间都完全无法完成分配，就会提前触发垃圾回收，而这次回收其实不是必要的。</p>
+<p>为了解决内存碎片问题，Mark-Compact被提出，它是在 Mark-Sweep的基础上演进而来的，相比Mark-Sweep，Mark-Compact添加了活动对象整理阶段，将所有的活动对象往一端移动，移动完成后，直接清理掉边界外的内存。</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173936917.png" alt="image-20210708173936917" loading="lazy"></p>
+<p><strong>全停顿( Stop-The-World)：</strong></p>
+<p>由于垃圾回收是在JS引擎中进行的，而Mark-Compact算法在执行过程中需要移动对象，而当活动对象较多的时候，它的执行速度不可能很快，为了避免JavaScript应用逻辑和垃圾回收器的内存资源竞争导致的不一致性问题，垃圾回收器会将JavaScript应用暂停，这个过程，被称为全停顿（stop-the-world）。</p>
+<p>在新生代中，由于空间小、存活对象较少、Scavenge算法执行效率较快，所以全停顿的影响并不大。而老生代中就不一样，如果老生代中的活动对象较多，垃圾回收器就会暂停主线程较长的时间，使得页面变得卡顿。</p>
+<p><strong>增量标记 (Incremental marking):</strong></p>
+<p>为了降低全堆垃圾回收的停顿时间，增量标记将原本的标记全堆对象拆分为一个一个任务，让其穿插在JavaScript应用逻辑之间执行，它允许堆的标记时的5~10ms的停顿。增量标记在堆的大小达到一定的阈值时启用，启用之后每当一定量的内存分配后，脚本的执行就会停顿并进行一次增量标记。</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173949356.png" alt="image-20210708173949356" loading="lazy"></p>
+<p><strong>懒性清理(Lazy sweeping):</strong></p>
+<p>增量标记只是对活动对象和非活动对象进行标记，惰性清理用来真正的清理释放内存。当增量标记完成后，假如当前的可用内存足以让我们快速的执行代码，其实我们是没必要立即清理内存的，可以将清理的过程延迟一下，让JavaScript逻辑代码先执行，也无需一次性清理完所有非活动对象内存，垃圾回收器会按需逐一进行清理，直到所有的页都清理完毕。</p>
+<p><strong>并发(Concurrent):</strong></p>
+<p>V8在老生代垃圾回收中，如果堆中的内存大小超过某个阈值之后，会启用并发（Concurrent）标记任务。并发式GC允许在在垃圾回收的同时不需要将主线程挂起，两者可以同时进行，只有在个别时候需要短暂停下来让垃圾回收器做一些特殊的操作。</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708173959311.png" alt="image-20210708173959311" loading="lazy"></p>
+<p><strong>并行(Parallel):</strong></p>
+<p>V8在新生代垃圾回收中，使用并行（parallel）机制。并行式GC允许主线程和辅助线程同时执行同样的GC工作，这样可以让辅助线程来分担主线程的GC工作，使得垃圾回收所耗费的时间等于总时间除以参与的线程数量（加上一些同步开销）。</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708174009434.png" alt="image-20210708174009434" loading="lazy"></p>
+<p>参考资料：<a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000025129635">深入理解Chrome V8垃圾回收机制</a></p>
+</blockquote>
+<h2 id="V8-是怎么执行一段-JavaScript-代码的"><a href="#V8-是怎么执行一段-JavaScript-代码的" class="headerlink" title="V8 是怎么执行一段 JavaScript 代码的"></a>V8 是怎么执行一段 JavaScript 代码的</h2><p>初始化基础环境后，当 V8 编译 JavaScript 代码时，解析器(parser)将生成一个抽象语法树(AST)。生成 AST 后，解释器 Ignition 根据语法树(AST)生成字节码(Bytecode)。TurboFan 是 V8 的优化编译器，TurboFan 将字节码(Bytecode)生成优化的机器代码(Machine Code)。</p>
+<p><img src="https://gitee.com/sticla/picbed/raw/master/images/image-20210708174021198.png" alt="image-20210708174021198" loading="lazy"></p>
+<ul>
+<li><p>如果函数没有被调用，则V8不会去编译它。</p>
+</li>
+<li><p>如果函数只被调用1次，则Ignition将其编译为Bytecode就直接解释执行了。TurboFan不会进行优化编译，因为它需要Ignition收集函数执行时的类型信息。这就要求函数需要执行1次以上，TurboFan才有可能进行优化编译。</p>
+</li>
+<li><p>如果函数被调用多次，则它有可能会被识别为hot函数，且Ignition收集的类型信息证明可以进行优化编译的话，这时TurboFan则会将Bytecode编译为Optimized Machine Code，以提高代码的执行性能。</p>
+</li>
+<li><p>图片中的红线是逆向的，这的确有点奇怪，Optimized Machine Code会被还原为Bytecode，这个过程叫做Deoptimization。这是因为Ignition收集的信息可能是错误的，比如add函数的参数之前是整数，后来又变成了字符串。生成的Optimized Machine Code已经假定add函数的参数是整数，那当然是错误的，于是需要进行Deoptimization。</p>
+</li>
+<li><p>在运行 C、C++以及 Java 等程序之前，需要进行编译，不能直接执行源码；但对于 JavaScript 来说，我们可以直接执行源码(比如：node test.js)，它是在运行的时候先编译再执行，这种方式被称为**即时编译(Just-in-time compilation)**，简称为 JIT。</p>
+</li>
+<li><p>总结：</p>
+<p><strong>V8 执行一段 JavaScript 代码所经历的主要流程</strong>包括：</p>
+<ul>
+<li>准备好代码的<em>运行时</em>环境；</li>
+<li>解析源码生成 AST；</li>
+<li>依据 AST 生成字节码；</li>
+<li>解释执行字节码；</li>
+<li>监听热点代码；</li>
+<li>优化热点代码为二进制的机器代码；</li>
+<li>反优化生成的二进制机器代码。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>资料参考：<a target="_blank" rel="noopener" href="https://kiwenlau.com/2019/07/16/how-does-v8-work/">V8 引擎是如何工作的？</a></p>
+</blockquote>
+</div><ul class="post-copyright"><li class="post-copyright-author"><strong>Post author: </strong>sticla</li><li class="post-copyright-link"><strong>Post link: </strong><a href="https://blog.sticla.top/2021/04/12/meet-v8-for-the-first-time/" title="深入理解JS：初识V8引擎">https://blog.sticla.top/2021/04/12/meet-v8-for-the-first-time/</a></li><li class="post-copyright-license"><strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><svg class="icon"><use xlink:href="#icon-creative-commons-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-by-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-nc-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-sa-line"></use></svg></a> unless otherwise stated.</li></ul></section></article><div class="post-nav"><div class="post-nav-item"><a class="post-nav-prev" href="/2021/06/29/typeScript-deep-dive/" rel="prev" title="深入TypeScript：类型系统"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-left-s-line"></use></svg><span class="post-nav-text">深入TypeScript：类型系统</span></a></div><div class="post-nav-item"><a class="post-nav-next" href="/2021/03/26/Typora-Picgo-Imgur-autoupdate-picture/" rel="next" title="Typora + Picgo + Imgur 自动上传图片"><span class="post-nav-text">Typora + Picgo + Imgur 自动上传图片</span><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-right-s-line"></use></svg></a></div></div></div><div class="hty-card" id="comment"><div class="comment-tooltip text-center"><span>若您想及时得到回复提醒，建议跳转 GitHub Issues 评论。</span><br><a class="hty-button hty-button--raised" id="github-issues" target="_blank" rel="noopener" href="https://github.com/li-sticla/li-sticla.github.io/issues?q=is:issue+深入理解JS：初识V8引擎">GitHub Issues</a></div><div id="valine-container"></div><script>Yun.utils.getScript("https://cdn.jsdelivr.net/npm/valine@latest/dist/Valine.min.js", () => {
+  const valineConfig = {"enable":true,"appId":"fhhkJbCVeplMMyPTL5CmiGOV-MdYXbMMI","appKey":"gXz6Ktd45hdMO77EYNY9cRds","placeholder":"有任何问题请留言，看到会回复滴","avatar":null,"pageSize":10,"visitor":true,"highlight":true,"recordIP":false,"enableQQ":true,"avatar_cdn":"https://gravatar.loli.net/avatar/","meta":["nick","mail","link"],"el":"#valine-container","lang":"en"}
+  valineConfig.path = "/2021/04/12/meet-v8-for-the-first-time/"
+  new Valine(valineConfig)
+}, window.Valine);</script></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2019 – 2023 </span><span class="with-love" id="animate"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-cloud-line"></use></svg></span><span class="author"> sticla</span></div><div class="powered"><span>Powered by <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> v5.4.0</span><span class="footer-separator">|</span><span>Theme - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.5.2</span></div><div class="live_time"><span>本博客已萌萌哒地存活了</span><span id="display_live_time"></span><span class="moe-text">(●'◡'●)</span><script>function blog_live_time() {
+  setTimeout(blog_live_time, 1000);
+  const start = new Date('2021-03-19T21:17:49');
+  const now = new Date();
+  const timeDiff = (now.getTime() - start.getTime());
+  const msPerMinute = 60 * 1000;
+  const msPerHour = 60 * msPerMinute;
+  const msPerDay = 24 * msPerHour;
+  const passDay = Math.floor(timeDiff / msPerDay);
+  const passHour = Math.floor((timeDiff % msPerDay) / 60 / 60 / 1000);
+  const passMinute = Math.floor((timeDiff % msPerHour) / 60 / 1000);
+  const passSecond = Math.floor((timeDiff % msPerMinute) / 1000);
+  display_live_time.innerHTML = " " + passDay + " 天 " + passHour + " 小时 " + passMinute + " 分 " + passSecond + " 秒";
+}
+blog_live_time();
+</script></div></footer><a class="hty-icon-button" id="goUp" aria-label="back-to-top" href="#"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-up-s-line"></use></svg><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#6200ee" stroke-width="2" stroke-linecap="round"></circle></svg></a></div></body></html>
